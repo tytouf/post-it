@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Whiteboard & post-it</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A whiteboard for post-it">
+    <meta name="author" content="Christophe Augier">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style>
+.yellow {
+  background-color: #EFF584;
+}
+
+.green {
+  background-color: #9BF584;
+}
+
+.blue {
+  background-color: #84AFF5;
+}
+
+.orange {
+  background-color: #FFB845;
+}
+
+.red {
+  background-color: #FC6060;
+}
+
+.post-it {
+  position: absolute;
+  width: 170px;
+  min-height: 85px;
+  max-height: 170px;
+  padding: 7px 7px;
+}
+
+.post-it-editable {
+  min-height: 65px;
+  font-family: Handlee, cursive;
+  font-size: 15px;
+  line-height: 15px;
+}
+
+.post-it-handle {
+}
+
+@font-face {
+  font-family: 'Handlee';
+  font-style: normal;
+  font-weight: normal;
+  src: local('Handlee'), url('fonts/Handlee-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Sue Ellen Francisco';
+  font-style: normal;
+  font-weight: normal;
+  src: local('Sue Ellen Francisco'), local('SueEllenFrancisco'), url('fonts/SueEllenFrancisco.ttf') format('truetype');
+}
+
+    </style>
+  </head>
+
+  <body>
+
+<div class="btn-toolbar navbar-fixed-top" style="margin: 0 0;">
+<div class="btn-group">
+  <a class="btn" href="#" alt="New" onclick="create_post_it({ top: 100, left: 100 });">
+    <i class="icon-file"></i>
+  </a>
+  <a class="btn" href="#" alt="Save" onclick="save_whiteboard();">
+    <i class="icon-download-alt"></i>
+  </a>
+  <a class="btn" href="#" alt="Clear" onclick="localStorage.clear();">
+    <i class="icon-trash"></i>
+  </a>
+</div>
+
+<div class="btn-group">
+  <a class="btn dropdown-toggle" href="#" data-toggle="dropdown">
+    <i class="icon-tint"></i>
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu">
+    <li><a class="red" href="#" alt="Red" onclick="change_post_it({ color: 'red' });">&nbsp;</a></li>
+    <li><a class="orange" href="#" alt="Orange" onclick="change_post_it({ color: 'orange' });">&nbsp;</a></li>
+    <li><a class="yellow" href="#" alt="Yellow" onclick="change_post_it({ color: 'yellow' });">&nbsp;</a></li>
+    <li><a class="green" href="#" alt="Green" onclick="change_post_it({ color: 'green' });">&nbsp;</a></li>
+    <li><a class="blue" href="#" alt="Blue" onclick="change_post_it({ color: 'blue' });">&nbsp;</a></li>
+  </ul>
+</div>
+</div>
+
+
+<div id="whiteboard">
+
+</div>
+
+<script src="js/jquery.js"></script>
+<script src="js/jquery-ui.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.json.js"></script>
+<script>
+function isUndefined(v) {
+  return typeof v === 'undefined';
+}
+function isDefined(v) {
+  return typeof v !== 'undefined';
+}
+
+var current = null;
+
+function save_whiteboard() {
+  var elts = $('.post-it');
+  var board = [];
+
+  elts.each(function(idx, e) {
+    var elt = $(e);
+    var data = { color: elt.data('color'),
+                 content: elt.find('div.post-it-editable').html(),
+                 top: elt.position().top,
+                 left: elt.position().left };
+    board.push(data);
+  });
+  localStorage.board = $.toJSON(board);
+}
+
+function load_whiteboard() {
+  var storage = localStorage.board;
+  if (storage === undefined) {
+     return;
+  }
+  var board = $.evalJSON(localStorage.board);
+  for (i in board) {
+    var data = board[i];
+    create_post_it(data);
+  }
+}
+
+function delete_post_it(elt) {
+  elt.remove();
+}
+
+function change_post_it(options) {
+  if (!current) {
+    return;
+  }
+  if (isDefined(options.color)) {
+    current.removeClass(current.data('color'))
+           .addClass(options.color)
+           .data('color', options.color);
+  }
+}
+
+function create_post_it(options) {
+  var options = $.extend({ content: '', top: 0, left: 0, color: 'yellow' },
+                         options);
+  var postit = $('<div>');
+  postit.addClass('post-it')
+        .addClass(options.color)
+        .data('color', options.color)
+        .append('<div class="post-it-handle" style="display: none;"><i class="icon-remove" style="float: right"></i></div><div class="post-it-editable" contenteditable style="clear:both;">' + options.content + '</div>')
+        .offset(options)
+        .hover(function() { $(this).find('div.post-it-handle').show(); },
+               function() { $(this).find('div.post-it-handle').hide(); })
+        .draggable({ cancel: '.post-it-editable', cursor: 'hand', opacity: 0.5, grid: [20, 20] })
+        .click(function() { current = $(this); });
+
+  postit.find('i.icon-remove')
+             .data('postit', postit)
+             .click(function() { delete_post_it($(this).data('postit')); });
+
+  $('#whiteboard').append(postit);
+}
+
+
+$(document).ready(function () {
+  load_whiteboard();
+});
+</script>
+
+  </body>
+</html>
